@@ -33,13 +33,9 @@ def start(sql_database: str, timeout: int=10):
             uuid: str = mc_server[2]
 
             if(not table_exists(SQL_cursor, f"LOGS_{uuid}")):
-                SQL_cursor.execute(f'''CREATE TABLE LOGS_{uuid} (
-                    timestamp DATETIME,
-                    connection BOOL,
-                    online BOOL,
-                    player_count INT,
-                    players TEXT
-                    );''')
+                print("New unlogged server... creating TABLE")
+                create_logs_table(SQL_cursor, uuid)
+
 
             status = get_status(ip, port)
 
