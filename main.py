@@ -3,7 +3,6 @@ import threading
 import time
 import configparser
 from SQL_functions import *
-from global_flags import *
 import minecraft_player_logger as MC_Logger
 
 # Read in config file
@@ -50,13 +49,16 @@ def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
 
 discord_bot_thread = threading.Thread(target=run_discord_bot)
-
+discord_bot_thread.daemon = True
 minecraft_bot_thread = threading.Thread(target=run_mc_bot)
-kill_mc_bot = False
+minecraft_bot_thread.daemon = True
 
 if(USE_BOT): discord_bot_thread.start()
 minecraft_bot_thread.start()
 
-exit_ = input("enter to exit at any point")
+try:
+    exit_ = input("")
+except KeyboardInterrupt:
+    pass
 
 SQL_connection.close()

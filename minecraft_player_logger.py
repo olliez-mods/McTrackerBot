@@ -3,7 +3,6 @@ import time
 from datetime import datetime
 from SQL_functions import *
 from get_mc_server_status import *
-from global_flags import *
 import uuid
 
 
