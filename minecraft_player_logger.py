@@ -9,6 +9,10 @@ import uuid
 def get_uuid() -> str:
     return str(uuid.uuid4())
 
+def add_record(connection: sqlite3.Connection, cursor: sqlite3.Cursor, uuid: str, timestamp: str, s_reboot: int, connected: int, online: int, player_count: int, players: list[str]):
+    cursor.execute(f"INSERT INTO LOGS_{uuid} (timestamp, s_reboot, connected, online, player_count, players) VALUES ('{timestamp}', {s_reboot}, {connected}, {online}, {player_count}, '{','.join(players)}')")
+    connection.commit()
+
 def start(sql_database: str, timeout: int=10):
 
     # Keeps track of how long an iteration took so we can calculate how long to time.sleep() for
@@ -19,6 +23,8 @@ def start(sql_database: str, timeout: int=10):
     SQL_connection = sqlite3.connect(sql_database)
     SQL_cursor = SQL_connection.cursor()
 
+    timestamp = str(datetime.now())
+
     while(True):
         iteration_start = time.time()
 
@@ -26,6 +32,7 @@ def start(sql_database: str, timeout: int=10):
         SQL_cursor.execute('SELECT * FROM mc_servers')
         rows: list[any] = SQL_cursor.fetchall()
         
+
         #Loop through each server
         for mc_server in rows:
             ip: str = mc_server[0]
@@ -36,15 +43,27 @@ def start(sql_database: str, timeout: int=10):
                 print("New unlogged server... creating TABLE")
                 create_logs_table(SQL_cursor, uuid)
 
+            # Returns None if the row isn't found
+            last_log = get_last_log(SQL_cursor, uuid)
 
             status = get_status(ip, port)
+            if('players' in status): status['players'].sort()
 
-            timestamp = str(datetime.now())
+            make_log = False
+            if(last_log == None): make_log = True
+            elif(status['connected'] != last_log[2]): make_log = True
+            elif(status['online'] != last_log[3]): make_log = True
+            elif(status['count'] != last_log[4]): make_log = True
+            elif(len(last_log) >= 6 and not all(x == y for x, y in zip(status['players'], last_log[5].split(",")))): make_log = True
 
-            SQL_cursor.execute(f"INSERT INTO LOGS_{uuid} (timestamp, connection, online, player_count, players) VALUES ('{timestamp}', '{status['connected']}', '{status['online']}', '{status['count']}', '{','.join(status['players'])}')")
-            SQL_connection.commit()
-
+            if(make_log):
+                timestamp = str(datetime.now())
+                add_record(SQL_connection, SQL_cursor, uuid, timestamp, 0, status['connected'], status['online'], status['count'], status['players'])
+                print(status)
 
         iteration_end = time.time()
-        time.sleep(timeout - (iteration_end-iteration_start))
+
+        tts = timeout - (iteration_end-iteration_start)
+        if(tts < 0): tts = 0
+        time.sleep(tts)
     

@@ -32,8 +32,15 @@ def create_mc_servers_table(cursor: sqlite3.Cursor):
 def create_logs_table(cursor: sqlite3.Cursor, uuid: str):
     cursor.execute(f'''CREATE TABLE LOGS_{uuid} (
                    timestamp DATETIME,
-                   connection BOOL,
+                   s_reboot BOOL,
+                   connected BOOL,
                    online BOOL,
                    player_count INT,
                    players TEXT
                    );''')
+    
+def get_last_log(cursor: sqlite3.Cursor, uuid: str):
+    cursor.execute(f"SELECT * FROM LOGS_{uuid} ORDER BY timestamp DESC LIMIT 1")
+
+    # Fetch the result (the row with the most recent datetime value)
+    return cursor.fetchone()

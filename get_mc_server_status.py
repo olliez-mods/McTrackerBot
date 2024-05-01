@@ -67,16 +67,16 @@ def is_connected():
 def get_status(host: str='localhost', port: int=25565) -> dict:
 
     if(not is_connected()):
-        return {'connected':False}
+        return {'connected':0, 'online':-1, 'count':-1, 'players':[]}
 
     # Create a TCP socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        s.settimeout(3)
+        s.settimeout(2)
         s.connect((host, port)) # Attempt to connect to the server
     except:
-        return {'connected':True, 'online':False,'players':[],'count':0} # Return this is we can't connect
+        return {'connected':1, 'online':0, 'count':-1, 'players':[]} # Return this is we can't connect
 
 
     try:
@@ -100,7 +100,7 @@ def get_status(host: str='localhost', port: int=25565) -> dict:
                     data_json["players"]["online"] -= 1
                     break
 
-        results = {'connected':True, 'online':True, 'players':[]} # response if no one is online
+        results = {'connected':1, 'online':1, 'count':0, 'players':[]} # response if no one is online
         results['count'] = int(data_json['players']['online']) # add the number of players
 
         if("sample" in data_json['players']):
@@ -109,7 +109,7 @@ def get_status(host: str='localhost', port: int=25565) -> dict:
                 results['players'].append(player['name'])
         return results
     except:
-        return {'connected':True, 'online':False,'players':[],'count':0} # Return an error because something went wrong
+        return {'connected':1, 'online':1, 'count':0, 'players':[]} # Return an error because something went wrong
 
 
 
