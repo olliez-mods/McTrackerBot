@@ -48,6 +48,19 @@ def update_disc_server(ctx: commands.Context, ip: str, port: int):
                        (disc_server_id, disc_server_name, owner_id, channel_id, uuid))
     SQL_connection.commit()
 
+def format_seconds(seconds: int):
+    # Compute the number of hours, minutes, and seconds
+    hours = seconds // 3600
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    
+    # Build the string
+    if hours == 1:
+        return f"{hours} hour {minutes} mins"
+    elif(hours > 1):
+        return f"{hours} hours {minutes} mins"
+    else:
+        return f"{minutes} mins {seconds} secs"
 
 def get_embed(mc_server_uuid: str) -> discord.Embed:
     global SQL_connection, SQL_cursor
@@ -68,9 +81,29 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
     is_online = (rows[-1][3] == 1)
     player_count = rows[-1][4]
     player_list = rows[-1][5].split(",") if player_count > 0 else []
+    player_times_online: dict[str, str] = {}
 
     if(is_online): status_str = "Online"
     else: status_str = "Offline"
+
+    players_left: list[str] = player_list.copy()
+
+    last_stamp = datetime.now()
+    for i in range(len(rows) -1, -1, -1):
+        if(len(players_left) == 0):
+            break
+        time = rows[i][0]
+        log_player_list = rows[i][5].split(",") if player_count > 0 else []
+
+        new_p_list = players_left
+        for player in players_left:
+            if(not (player in log_player_list)):
+                new_p_list.remove(player)
+                player_times_online[player] = (datetime.now() - datetime.strptime(last_stamp, "%Y-%m-%d %H:%M:%S.%f")).seconds
+        players_left = new_p_list
+
+        last_stamp = rows[i][0]
+
 
     embed = discord.Embed(title="MC SERVER: " + status_str, color=0x00ff00)
 
@@ -78,7 +111,9 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
         if(player_count <= 0):
             embed.add_field(name="Players", value="Such Empty", inline=False)
         else:
-            players_str = "\n".join(player_list)
+            players_str = ""
+            for p in player_list:
+                players_str += p + "-> " + format_seconds(player_times_online[p]) + "\n"
             embed.add_field(name="Players", value=players_str, inline=False)
 
     return embed
