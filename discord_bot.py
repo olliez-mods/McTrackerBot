@@ -1,7 +1,7 @@
 import sqlite3
 import discord
 import uuid
-import datetime
+from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from SQL_functions import *
 
@@ -51,6 +51,41 @@ def update_disc_server(ctx: commands.Context, ip: str, port: int):
     SQL_connection.commit()
 
 
+def get_embed(mc_server_uuid: str) -> discord.Embed:
+    global SQL_connection, SQL_cursor
+
+    # The time 16 hours ago
+    t_16_hours_ago = datetime.now() - timedelta(hours=1)
+
+    SQL_cursor.execute(f"SELECT * FROM LOGS_{mc_server_uuid} WHERE timestamp >= ?", (t_16_hours_ago,))
+    rows = SQL_cursor.fetchall()
+
+    if(len(rows) == 0):
+        embed = discord.Embed(title="MC SERVER", color=0x00ff00)
+        print("NO DATA YET")
+        embed.add_field(value="NO DATA YET")
+        return embed
+
+    # Get the online collumn
+    is_online = (rows[-1][3] == 1)
+    player_count = rows[-1][4]
+    player_list = rows[-1][5].split(",") if player_count > 0 else []
+
+    if(is_online): status_str = "Online"
+    else: status_str = "Offline"
+
+    embed = discord.Embed(title="MC SERVER: " + status_str, color=0x00ff00)
+
+    if(is_online):
+        if(player_count <= 0):
+            embed.add_field(name="Players", value="Such Empty", inline=False)
+        else:
+            players_str = "\n".join(player_list)
+            embed.add_field(name="Players", value=players_str, inline=False)
+
+    return embed
+
+
 @tasks.loop(seconds=5)
 async def update_pinned_messages():
     global SQL_connection, SQL_cursor
@@ -64,15 +99,20 @@ async def update_pinned_messages():
             guild = bot.get_guild(disc[0])
             channel = guild.get_channel(disc[3])
             message = channel.get_partial_message(disc[4])
+            mc_server_uuid = disc[5]
 
             # Try to do something with the message, if it thows a HTTPException we assume that it's been deleted and try to create a new one
             try:
                 await message.clear_reactions()
             except discord.HTTPException:
                 print("Message does not exist, creating it")
-                message = await channel.send("This is a message, time is:" + str(datetime.datetime.now()))
+                message = await channel.send("This is a message, time is:" + str(datetime.now()))
                 SQL_cursor.execute("UPDATE disc_servers SET pinned_id = ? WHERE server_id = ?", (message.id, disc[0]))
                 SQL_connection.commit()
+
+            n_embed = get_embed(mc_server_uuid)
+            
+            await message.edit(embed=n_embed, content="")
 
             
             
@@ -81,7 +121,6 @@ async def update_pinned_messages():
             pass
         except discord.HTTPException:
             pass
-        mc_server_uuid = disc[5]
 
 
 
