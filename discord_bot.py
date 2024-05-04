@@ -29,8 +29,6 @@ def update_disc_server(ctx: commands.Context, ip: str, port: int):
                        WHERE server_ip = '{ip}' AND server_port = '{port}'""")
     rows = SQL_cursor.fetchall()
 
-    print(rows)
-
     # If we are tracking that IP and port, we can leach off of it, otherwise generate a new uuid for the mc server
     if(len(rows) > 0):
         uuid: str = rows[0][2]
@@ -107,6 +105,7 @@ async def update_pinned_messages():
             except discord.HTTPException:
                 print("Message does not exist, creating it")
                 message = await channel.send("This is a message, time is:" + str(datetime.now()))
+                await message.pin()
                 SQL_cursor.execute("UPDATE disc_servers SET pinned_id = ? WHERE server_id = ?", (message.id, disc[0]))
                 SQL_connection.commit()
 
@@ -135,8 +134,11 @@ async def on_command_error(ctx, error):
         return
     raise error
 
+
+
+
 @bot.command()
-async def set(ctx: commands.Context, ip: str, port:int):
+async def set(ctx: commands.Context, ip: str, port:int = 25565):
     global SQL_cursor
 
     owner_id = ctx.guild.owner_id
@@ -148,6 +150,9 @@ async def set(ctx: commands.Context, ip: str, port:int):
 
     update_disc_server(ctx, ip, port)
     print(f"Now tracking {ip}:{port}")
+
+
+
 
 
     

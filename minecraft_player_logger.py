@@ -59,7 +59,6 @@ def start(sql_database: str, timeout: int=10):
             if(make_log):
                 timestamp = str(datetime.now())
                 add_record(SQL_connection, SQL_cursor, uuid, timestamp, 0, status['connected'], status['online'], status['count'], status['players'])
-                print(status)
 
         iteration_end = time.time()
 
