@@ -4,6 +4,7 @@ import time
 import configparser
 from SQL_functions import *
 import minecraft_player_logger as MC_Logger
+import discord_bot as Discord_Bot
 
 # Read in config file
 config = configparser.ConfigParser()
@@ -31,13 +32,13 @@ if(not table_exists(SQL_cursor, "mc_servers")):
     create_mc_servers_table(SQL_cursor)
 
 def run_discord_bot():
-    pass
+    Discord_Bot.start(SQL_DATABASE, BOT_TOKEN)
 def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
 
 discord_bot_thread = threading.Thread(target=run_discord_bot)
-discord_bot_thread.daemon = True
 minecraft_bot_thread = threading.Thread(target=run_mc_bot)
+discord_bot_thread.daemon = True
 minecraft_bot_thread.daemon = True
 
 if(USE_BOT): discord_bot_thread.start()

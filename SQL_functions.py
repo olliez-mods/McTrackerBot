@@ -16,10 +16,9 @@ def create_disc_servers_table(cursor: sqlite3.Cursor):
                    server_id INT PRIMARY KEY,
                    server_name VARCHAR(50),
                    owner_id INT,
-                   admin_role_id INT,
                    channel_id INT,
-                   mc_server_ip VARCHAR(100),
-                   mc_server_port INT
+                   pinned_id INT,
+                   mc_server_uuid VARCHAR(32)
                    );''')
 
 def create_mc_servers_table(cursor: sqlite3.Cursor):
