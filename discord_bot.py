@@ -143,14 +143,16 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
     return embed
 
 #Clear all the pinned messages sent by this bot on the entire server
-async def clear_pinned(disc_server_id:int):
+async def clear_pinned(disc_server_id:int, channel_id:int):
+    global bot
     guild = bot.get_guild(int(disc_server_id))
-
+    channel = guild.get_channel(int(channel_id))
     if(guild == None): return
+    if(channel == None): return
 
-    for channel in guild.text_channels:
-        pinned_messages = await channel.pins()
-        for message in pinned_messages:
+    pinned_messages = await channel.pins()
+    for message in pinned_messages:
+        if(message.author.id == bot.user.id):
             await message.unpin()
     
 
@@ -170,7 +172,8 @@ async def update_pinned_messages():
             if(guild == None):
                 print("Could not find the guild")
                 continue
-            channel = guild.get_channel(disc[3])
+            channel_id: int = disc[3]
+            channel = guild.get_channel(channel_id)
             message = channel.get_partial_message(disc[4])
             mc_server_disp_name = disc[5]
             if (mc_server_disp_name == None): mc_server_disp_name = "MC Server"
@@ -181,8 +184,8 @@ async def update_pinned_messages():
                 await message.clear_reactions()
             except discord.HTTPException as e:
                 print("Error with a pinned message, generating a new one")
-                message = await channel.send("Please wait for up to 15 seconds for this message to update and pin itself")
-                await clear_pinned(guild_id)
+                message = await channel.send("Please wait for up to 15 seconds for this message to update and pin itself.\nAlso make sure to remove old pinned messages in other channels")
+                await clear_pinned(guild_id, channel_id)
                 await message.pin()
                 SQL_cursor.execute("UPDATE disc_servers SET pinned_id = ? WHERE server_id = ?", (message.id, disc[0]))
                 SQL_connection.commit()
