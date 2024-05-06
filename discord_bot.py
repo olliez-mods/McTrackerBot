@@ -9,6 +9,8 @@ import asyncio
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
+BOT_OWNER_ID = -1
+
 SQL_connection: sqlite3.Connection = None
 SQL_cursor: sqlite3.Cursor = None
 
@@ -220,7 +222,7 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
     owner_id = ctx.guild.owner_id
     
     # If message isn't sent by the auther, react to the message with an "X" and then exit this function
-    if(ctx.author.id != owner_id):
+    if(ctx.author.id != owner_id and ctx.author.id != BOT_OWNER_ID):
         await ctx.message.add_reaction('❌')
         return
 
@@ -231,6 +233,14 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
 
 @bot.command()
 async def help(ctx: commands.Context):
+
+    owner_id = ctx.guild.owner_id
+
+    # If message isn't sent by the auther, react to the message with an "X" and then exit this function
+    if(ctx.author.id != owner_id and ctx.author.id != BOT_OWNER_ID):
+        await ctx.message.add_reaction('❌')
+        return
+
     string = """Function:
     - !help   Brings up this page.\n
     - !set <ip> <port>   Starts tracking the given minecraft server, also creates the pinned message.\n
@@ -246,7 +256,7 @@ async def name(ctx: commands.Context, name:str):
     server_id = ctx.guild.id
 
     # If message isn't sent by the auther, react to the message with an "X" and then exit this function
-    if(ctx.author.id != owner_id):
+    if(ctx.author.id != owner_id and ctx.author.id != BOT_OWNER_ID):
         await ctx.message.add_reaction('❌')
         return
     
@@ -281,8 +291,10 @@ async def set_timeout():
     update_pinned_messages.change_interval(seconds=TIMEOUT)
     update_pinned_messages.start()
 
-def start(sql_database: str, token: str, pinned_timeout):
-    global SQL_connection, SQL_cursor, TIMEOUT
+def start(sql_database: str, token: str, owner_id:int, pinned_timeout):
+    global SQL_connection, SQL_cursor, TIMEOUT, BOT_OWNER_ID
+
+    BOT_OWNER_ID = owner_id
 
     SQL_connection = sqlite3.connect(sql_database)
     SQL_cursor =SQL_connection.cursor()

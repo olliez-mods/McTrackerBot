@@ -13,6 +13,7 @@ config.read('config.ini')
 # Assign config to static variables
 USE_BOT: bool = (config['Settings']['use_bot'] == "1")
 BOT_TOKEN: str = config['Settings']['bot_token']
+OWNER_ID: int = int(config['Settings']['owner_id'])
 SQL_DATABASE: str = config['Settings']['SQL_database']
 STATUS_TIMEOUT: int = int(config['Settings']["status_update_timeout"])
 PINNED_TIMEOUT: int = int(config['Settings']["pinned_message_timeout"])
@@ -33,7 +34,7 @@ if(not table_exists(SQL_cursor, "mc_servers")):
     create_mc_servers_table(SQL_cursor)
 
 def run_discord_bot():
-    Discord_Bot.start(SQL_DATABASE, BOT_TOKEN, PINNED_TIMEOUT)
+    Discord_Bot.start(SQL_DATABASE, BOT_TOKEN, OWNER_ID, PINNED_TIMEOUT)
 def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
 
