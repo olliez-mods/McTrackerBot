@@ -7,7 +7,7 @@ from SQL_functions import *
 import asyncio
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 SQL_connection: sqlite3.Connection = None
 SQL_cursor: sqlite3.Cursor = None
@@ -211,7 +211,14 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
     update_disc_server(ctx, ip, port)
     print(f"Now tracking {ip}:{port}")
 
-
+@bot.command()
+async def help(ctx: commands.Context):
+    string = """Function:
+    - !help - Brings up this page\n
+    - !set <ip> <port>   starts tracking the given minecraft server, also creates the pinned message\n
+    - !name <name>   Sets the display name of the Minecraft server (displayed in the pinned message)\n
+    - !stop   stops tracking the minecraft server"""
+    await ctx.reply(string)
     
 TIMEOUT = 10
 async def set_timeout():
@@ -229,4 +236,4 @@ def start(sql_database: str, token: str, pinned_timeout):
     TIMEOUT = pinned_timeout
     asyncio.run(set_timeout())
 
-    bot.run('MTIzNDk5NTMzMTM3MzA3NjYwNA.G5ONJ7.Sy4PMlFuDl75MkkdXADmWCVFW6Gkuwc6Txr7r8')
+    bot.run(token)
