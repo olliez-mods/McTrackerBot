@@ -215,8 +215,14 @@ async def on_command_error(ctx, error):
         return
     raise error
 
-
-
+@bot.event
+async def on_message(ctx: discord.Message):
+    # Check if the message is a system message indicating a message has been pinned
+    if ctx.type == discord.MessageType.pins_add:
+        # Check if the pinned message belongs to your bot
+        if ctx.author == bot.user:
+            # Delete the notification message
+            await ctx.delete()
 
 @bot.command()
 async def set(ctx: commands.Context, ip: str, port:int = 25565):
