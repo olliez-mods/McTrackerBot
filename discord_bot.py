@@ -142,6 +142,7 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
 
     return embed
 
+# TODO Clear all the pinned messages sent by this bot on the entire server
 async def clear_pinned():
     pass
 

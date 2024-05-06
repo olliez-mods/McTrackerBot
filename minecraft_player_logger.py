@@ -44,7 +44,10 @@ def start(sql_database: str, timeout: int=10):
                 create_logs_table(SQL_cursor, uuid)
 
             # Returns None if the row isn't found
-            last_log = get_last_log(SQL_cursor, uuid)
+            SQL_cursor.execute(f"SELECT * FROM LOGS_{uuid} ORDER BY timestamp DESC LIMIT 1")
+
+            # Fetch the result (the row with the most recent datetime value)
+            last_log = SQL_cursor.fetchone()
 
             status = get_status(ip, port)
             if('players' in status): status['players'].sort()

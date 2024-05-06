@@ -10,7 +10,6 @@ def table_exists(cursor: sqlite3.Cursor, name: str) -> bool:
         return True
     return False
 
-
 def create_disc_servers_table(cursor: sqlite3.Cursor):
     cursor.execute('''CREATE TABLE disc_servers (
                    server_id INT PRIMARY KEY,
@@ -38,9 +37,3 @@ def create_logs_table(cursor: sqlite3.Cursor, uuid: str):
                    player_count INT,
                    players TEXT
                    );''')
-    
-def get_last_log(cursor: sqlite3.Cursor, uuid: str):
-    cursor.execute(f"SELECT * FROM LOGS_{uuid} ORDER BY timestamp DESC LIMIT 1")
-
-    # Fetch the result (the row with the most recent datetime value)
-    return cursor.fetchone()
