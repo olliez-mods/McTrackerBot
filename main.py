@@ -46,9 +46,7 @@ minecraft_bot_thread.daemon = True
 if(USE_BOT): discord_bot_thread.start()
 minecraft_bot_thread.start()
 
-try:
-    exit_ = input("")
-except KeyboardInterrupt:
-    pass
+while(True):
+    time.sleep(2)
 
 SQL_connection.close()
