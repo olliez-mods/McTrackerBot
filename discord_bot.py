@@ -215,15 +215,6 @@ async def on_command_error(ctx, error):
         return
     raise error
 
-@bot.event
-async def on_message(ctx: discord.Message):
-    # Check if the message is a system message indicating a message has been pinned
-    if ctx.type == discord.MessageType.pins_add:
-        # Check if the pinned message belongs to your bot
-        if ctx.author == bot.user:
-            # Delete the notification message
-            await ctx.delete()
-
 @bot.command()
 async def set(ctx: commands.Context, ip: str, port:int = 25565):
     owner_id = ctx.guild.owner_id
@@ -232,6 +223,8 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
     if(ctx.author.id != owner_id):
         await ctx.message.add_reaction('❌')
         return
+
+    await ctx.reply("Proccessing...\nPlease wait for a pinned message to be generated\n.")
 
     update_disc_server(ctx, ip, port)
     print(f"Now tracking {ip}:{port}")
@@ -266,6 +259,18 @@ async def name(ctx: commands.Context, name:str):
 
     SQL_cursor.execute("UPDATE disc_servers SET mc_server_disp_name = ? WHERE server_id = ?", (name, server_id))
     SQL_connection.commit()
+
+@bot.event
+async def on_message(message: discord.Message):
+
+    await bot.process_commands(message)
+
+    # Check if the message is a system message indicating a message has been pinned
+    if message.type == discord.MessageType.pins_add:
+        # Check if the pinned message belongs to your bot
+        if message.author == bot.user:
+            # Delete the notification message
+            await message.delete()
     
 
     

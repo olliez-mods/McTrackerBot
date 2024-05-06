@@ -32,7 +32,8 @@ def start(sql_database: str, timeout: int=10):
         SQL_cursor.execute('SELECT * FROM mc_servers')
         rows: list[any] = SQL_cursor.fetchall()
         
-
+        print("start")
+        t_stamp = time.time()
         #Loop through each server
         for mc_server in rows:
             ip: str = mc_server[0]
@@ -62,6 +63,8 @@ def start(sql_database: str, timeout: int=10):
             if(make_log):
                 timestamp = str(datetime.now())
                 add_record(SQL_connection, SQL_cursor, uuid, timestamp, 0, status['connected'], status['online'], status['count'], status['players'])
+
+        print("ended with:", time.time() - t_stamp)
 
         iteration_end = time.time()
 
