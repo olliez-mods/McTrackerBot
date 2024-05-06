@@ -15,6 +15,7 @@ USE_BOT: bool = (config['Settings']['use_bot'] == "1")
 BOT_TOKEN: str = config['Settings']['bot_token']
 SQL_DATABASE: str = config['Settings']['SQL_database']
 STATUS_TIMEOUT: int = int(config['Settings']["status_update_timeout"])
+PINNED_TIMEOUT: int = int(config['Settings']["pinned_message_timeout"])
 
 # Create SQL connection and curser
 SQL_connection = sqlite3.connect(SQL_DATABASE)
@@ -32,7 +33,7 @@ if(not table_exists(SQL_cursor, "mc_servers")):
     create_mc_servers_table(SQL_cursor)
 
 def run_discord_bot():
-    Discord_Bot.start(SQL_DATABASE, BOT_TOKEN)
+    Discord_Bot.start(SQL_DATABASE, BOT_TOKEN, PINNED_TIMEOUT)
 def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
 

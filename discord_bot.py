@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from SQL_functions import *
+import asyncio
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -62,48 +63,70 @@ def format_seconds(seconds: int):
     else:
         return f"{minutes} mins {seconds} secs"
 
+# Retyurns an embed that shows how long each player currently online has been online for
 def get_embed(mc_server_uuid: str) -> discord.Embed:
     global SQL_connection, SQL_cursor
 
     # The time 16 hours ago
     t_16_hours_ago = datetime.now() - timedelta(hours=1)
 
+    # This will get every log within the last 16 hours
     SQL_cursor.execute(f"SELECT * FROM LOGS_{mc_server_uuid} WHERE timestamp >= ?", (t_16_hours_ago,))
     rows = SQL_cursor.fetchall()
 
+    # Since a log is made when something changes, we may not have any changes in the past 16 hours
+    # This could mean someone is online for 16 hours+ so we want to get the most recent log if it exists
+    if(len(rows) == 0):
+        SQL_cursor.execute(f"SELECT * FROM LOGS_{mc_server_uuid} ORDER BY timestamp DESC LIMIT 1")
+        rows = SQL_cursor.fetchall()
+
+    # If there are actualy zero logs at all, we will return an Embed that says NO DATA
     if(len(rows) == 0):
         embed = discord.Embed(title="MC SERVER", color=0x00ff00)
-        print("NO DATA YET")
-        embed.add_field(value="NO DATA YET")
+        embed.add_field(name="", value="NO DATA")
         return embed
 
     # Get the online collumn
     is_online = (rows[-1][3] == 1)
     player_count = rows[-1][4]
     player_list = rows[-1][5].split(",") if player_count > 0 else []
+
+    # This will hold each players online seconds
     player_times_online: dict[str, str] = {}
 
+    # Is the server online or offline
     if(is_online): status_str = "Online"
     else: status_str = "Offline"
 
+    # This tracks how many players we don't have a final time for yet
     players_left: list[str] = player_list.copy()
 
     last_stamp = datetime.now()
+    # Loop through the logs backwards
     for i in range(len(rows) -1, -1, -1):
+        # If we have no players left to track we can exit early
         if(len(players_left) == 0):
             break
+
+        # Get the timestamp and player list for this log
         time = rows[i][0]
         log_player_list = rows[i][5].split(",") if player_count > 0 else []
 
-        new_p_list = players_left
+        # new_p_list allows us to edit the list while looping through it
+        new_list = players_left
         for player in players_left:
+            # We reached the log directly before this player joined the server
             if(not (player in log_player_list)):
-                new_p_list.remove(player)
+                # Remove the player from tracked players list, and calculate seconds using the timestamp from the previouse log
+                new_list.remove(player)
                 player_times_online[player] = (datetime.now() - datetime.strptime(last_stamp, "%Y-%m-%d %H:%M:%S.%f")).seconds
-        players_left = new_p_list
+        players_left = new_list
 
         last_stamp = rows[i][0]
 
+    # If there are any players left over that we didn'y find a log where they joined in the last 16 hours, cap the time at 16 hours
+    for player in players_left:
+        player_times_online[player] = 60*60*16
 
     embed = discord.Embed(title="MC SERVER: " + status_str, color=0x00ff00)
 
@@ -111,6 +134,7 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
         if(player_count <= 0):
             embed.add_field(name="Players", value="Such Empty", inline=False)
         else:
+            # For each player, format the seconds to something readable
             players_str = ""
             for p in player_list:
                 players_str += p + "-> " + format_seconds(player_times_online[p]) + "\n"
@@ -119,13 +143,14 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
     return embed
 
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=30)
 async def update_pinned_messages():
     global SQL_connection, SQL_cursor
     SQL_cursor.execute(f"SELECT * FROM disc_servers")
 
     disc_servers = SQL_cursor.fetchall()
 
+    # loop over every discord server
     for disc in disc_servers:
 
         try:
@@ -187,16 +212,21 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
     print(f"Now tracking {ip}:{port}")
 
 
-
-
-
     
+TIMEOUT = 10
+async def set_timeout():
+    global TIMEOUT
+    update_pinned_messages.stop()
+    update_pinned_messages.change_interval(seconds=TIMEOUT)
+    update_pinned_messages.start()
 
-
-def start(sql_database: str, token: str):
-    global SQL_connection, SQL_cursor
+def start(sql_database: str, token: str, pinned_timeout):
+    global SQL_connection, SQL_cursor, TIMEOUT
 
     SQL_connection = sqlite3.connect(sql_database)
     SQL_cursor =SQL_connection.cursor()
+
+    TIMEOUT = pinned_timeout
+    asyncio.run(set_timeout())
 
     bot.run('MTIzNDk5NTMzMTM3MzA3NjYwNA.G5ONJ7.Sy4PMlFuDl75MkkdXADmWCVFW6Gkuwc6Txr7r8')
