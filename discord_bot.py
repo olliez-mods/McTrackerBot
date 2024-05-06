@@ -64,7 +64,7 @@ def format_seconds(seconds: int):
         return f"{minutes} mins {seconds} secs"
 
 # Retyurns an embed that shows how long each player currently online has been online for
-def get_embed(mc_server_uuid: str) -> discord.Embed:
+def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord.Embed:
     global SQL_connection, SQL_cursor
 
     # The time 16 hours ago
@@ -128,7 +128,7 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
     for player in players_left:
         player_times_online[player] = 60*60*16
 
-    embed = discord.Embed(title="MC SERVER: " + status_str, color=0x00ff00)
+    embed = discord.Embed(title=f"{mc_server_name}: " + status_str, color=0x00ff00)
 
     if(is_online):
         if(player_count <= 0):
@@ -142,6 +142,8 @@ def get_embed(mc_server_uuid: str) -> discord.Embed:
 
     return embed
 
+async def clear_pinned():
+    pass
 
 @tasks.loop(seconds=30)
 async def update_pinned_messages():
@@ -157,7 +159,9 @@ async def update_pinned_messages():
             guild = bot.get_guild(disc[0])
             channel = guild.get_channel(disc[3])
             message = channel.get_partial_message(disc[4])
-            mc_server_uuid = disc[5]
+            mc_server_disp_name = disc[5]
+            if (mc_server_disp_name == None): mc_server_disp_name = "MC Server"
+            mc_server_uuid = disc[6]
 
             # Try to do something with the message, if it thows a HTTPException we assume that it's been deleted and try to create a new one
             try:
@@ -169,7 +173,7 @@ async def update_pinned_messages():
                 SQL_cursor.execute("UPDATE disc_servers SET pinned_id = ? WHERE server_id = ?", (message.id, disc[0]))
                 SQL_connection.commit()
 
-            n_embed = get_embed(mc_server_uuid)
+            n_embed = get_embed(mc_server_uuid, mc_server_disp_name)
             
             await message.edit(embed=n_embed, content="")
 
@@ -199,8 +203,6 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def set(ctx: commands.Context, ip: str, port:int = 25565):
-    global SQL_cursor
-
     owner_id = ctx.guild.owner_id
     
     # If message isn't sent by the auther, react to the message with an "X" and then exit this function
@@ -214,11 +216,35 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
 @bot.command()
 async def help(ctx: commands.Context):
     string = """Function:
-    - !help - Brings up this page\n
-    - !set <ip> <port>   starts tracking the given minecraft server, also creates the pinned message\n
-    - !name <name>   Sets the display name of the Minecraft server (displayed in the pinned message)\n
-    - !stop   stops tracking the minecraft server"""
+    - !help   Brings up this page.\n
+    - !set <ip> <port>   Starts tracking the given minecraft server, also creates the pinned message.\n
+    - !name \"<name>\"   Sets the display name of the Minecraft server, use quotes (\") around the name for spaces.\n
+    - !stop   Stops tracking the minecraft server."""
     await ctx.reply(string)
+
+@bot.command()
+async def name(ctx: commands.Context, name:str):
+    global SQL_connection, SQL_cursor
+
+    owner_id = ctx.guild.owner_id
+    server_id = ctx.guild.id
+
+    # If message isn't sent by the auther, react to the message with an "X" and then exit this function
+    if(ctx.author.id != owner_id):
+        await ctx.message.add_reaction('❌')
+        return
+    
+    SQL_cursor.execute(f'SELECT * FROM disc_servers WHERE server_id = "{server_id}" LIMIT 1')
+    rows = SQL_cursor.fetchall()
+
+    if(len(rows) == 0):
+        await ctx.reply("Please start tracking a minecraft server with \"!set\" before setting its name")
+        return
+
+    SQL_cursor.execute("UPDATE disc_servers SET mc_server_disp_name = ? WHERE server_id = ?", (name, server_id))
+    SQL_connection.commit()
+    
+
     
 TIMEOUT = 10
 async def set_timeout():
