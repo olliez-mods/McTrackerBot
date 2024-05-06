@@ -184,7 +184,7 @@ async def update_pinned_messages():
                 await message.clear_reactions()
             except discord.HTTPException as e:
                 print("Error with a pinned message, generating a new one")
-                message = await channel.send("Please wait for up to 15 seconds for this message to update and pin itself.\nAlso make sure to remove old pinned messages in other channels")
+                message = await channel.send("Please wait for up to 15 seconds for this message to update and pin itself.\nAlso make sure to remove old pinned messages in other channels.")
                 await clear_pinned(guild_id, channel_id)
                 await message.pin()
                 SQL_cursor.execute("UPDATE disc_servers SET pinned_id = ? WHERE server_id = ?", (message.id, disc[0]))
