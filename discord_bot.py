@@ -267,6 +267,18 @@ async def taco(ctx: commands.Context):
     await ctx.message.delete()
     await ctx.send(':taco:')
 
+@bot.command()
+async def stop(ctx: commands.Context):
+
+    owner_id = ctx.guild.owner_id
+    
+    # If message isn't sent by the auther, react to the message with an "X" and then exit this function
+    if(ctx.author.id != owner_id and ctx.author.id != BOT_OWNER_ID):
+        await ctx.message.add_reaction('❌')
+        return
+
+    await ctx.reply("This feature is coming soon")
+
 
 @bot.command()
 async def name(ctx: commands.Context, name:str):
