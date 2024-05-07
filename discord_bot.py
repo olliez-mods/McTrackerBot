@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from SQL_functions import *
 import asyncio
+import random
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
@@ -144,8 +145,11 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
         else:
             # For each player, format the seconds to something readable
             players_str = ""
+            r_spread = random.random() * 5
+            r_spread = int(r_spread/2 - r_spread)
+
             for p in player_list:
-                players_str += p + "-> " + format_seconds(player_times_online[p]) + "\n"
+                players_str += p + " -> " + format_seconds(player_times_online[p]+r_spread) + "\n"
             embed.add_field(name="Players", value=players_str, inline=False)
 
     return embed
