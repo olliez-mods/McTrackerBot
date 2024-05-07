@@ -261,6 +261,11 @@ async def help(ctx: commands.Context):
     - !stop   Stops tracking the minecraft server."""
     await ctx.reply(string)
 
+
+@bot.command()
+async def taco(ctx: commands.Context):
+    await ctx.send(':taco:')
+
 @bot.command()
 async def name(ctx: commands.Context, name:str):
     global SQL_connection, SQL_cursor
