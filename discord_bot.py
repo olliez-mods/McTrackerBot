@@ -145,7 +145,7 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
         else:
             # For each player, format the seconds to something readable
             players_str = ""
-            r_spread = random.random() * 5
+            r_spread = random.random() * 7
             r_spread = int(r_spread/2 - r_spread)
 
             for p in player_list:
