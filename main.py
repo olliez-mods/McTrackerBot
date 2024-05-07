@@ -7,6 +7,7 @@ from SQL_functions import *
 import minecraft_player_logger as MC_Logger
 import discord_bot as Discord_Bot
 
+# If the config.ini file doesn't exist yet, we will make a default version of it and then quit
 if(not os.path.exists('config.ini')):
     print("Default config.ini file created with default settings.\nPlease adjust these for the program to function correctly")
     with open('config.ini', 'w') as f:
@@ -57,6 +58,9 @@ if(not table_exists(SQL_cursor, "mc_servers")):
     create_mc_servers_table(SQL_cursor)
 
 def run_discord_bot():
+    if(BOT_TOKEN == "" or BOT_TOKEN == " " or len(BOT_TOKEN) < 20 or not ('.' in BOT_TOKEN)):
+        print("The provided token seems to not be formatted correctly. Make sure you are using the correct token\n")
+        exit()
     Discord_Bot.start(SQL_DATABASE, BOT_TOKEN, OWNER_ID, PINNED_TIMEOUT)
 def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
@@ -71,5 +75,3 @@ minecraft_bot_thread.start()
 
 while(True):
     time.sleep(2)
-
-SQL_connection.close()
