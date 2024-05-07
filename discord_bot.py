@@ -264,7 +264,9 @@ async def help(ctx: commands.Context):
 
 @bot.command()
 async def taco(ctx: commands.Context):
+    await ctx.message.delete()
     await ctx.send(':taco:')
+
 
 @bot.command()
 async def name(ctx: commands.Context, name:str):
