@@ -53,6 +53,9 @@ def update_disc_server(ctx: commands.Context, ip: str, port: int):
     SQL_connection.commit()
 
 def format_seconds(seconds: int):
+
+    if(seconds < 0): seconds = 0
+
     # Compute the number of hours, minutes, and seconds
     hours = seconds // 3600
     minutes = int((seconds % 3600) // 60)
