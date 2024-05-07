@@ -1,10 +1,34 @@
 import sqlite3
 import threading
 import time
+import os
 import configparser
 from SQL_functions import *
 import minecraft_player_logger as MC_Logger
 import discord_bot as Discord_Bot
+
+if(not os.path.exists('config.ini')):
+    print("Default config.ini file created with default settings.\nPlease adjust these for the program to function correctly")
+    with open('config.ini', 'w') as f:
+        f.write("""
+# Config file to setup the discord bot
+# use 1 for True (or yes), 0 for False (or no)
+
+[Settings]
+# Should the bot be activated? If so you need to provide a bot_token
+use_bot=1
+bot_token=
+owner_id=475093793834663948
+
+# Name of the .db file you will be using (can be anything)
+SQL_database=bot_database.db
+
+# Timeout between pinging every minecraft server
+status_update_timeout=3
+# Timeout between updating pinned messages (May be rate limited if beloew 10)
+pinned_message_timeout=10
+""")
+    exit()
 
 # Read in config file
 config = configparser.ConfigParser()
@@ -21,7 +45,6 @@ PINNED_TIMEOUT: int = int(config['Settings']["pinned_message_timeout"])
 # Create SQL connection and curser
 SQL_connection = sqlite3.connect(SQL_DATABASE)
 SQL_cursor = SQL_connection.cursor()
-
 
 # Make sure the disc_servers table exists if we are using the bot
 if(USE_BOT and not table_exists(SQL_cursor, "disc_servers")):
