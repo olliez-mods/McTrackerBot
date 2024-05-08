@@ -269,7 +269,7 @@ async def help(ctx: commands.Context):
 @bot.command()
 async def taco(ctx: commands.Context):
     await ctx.message.delete()
-    ctx.send(':taco:')
+    await ctx.send(':taco:')
 
 @bot.command()
 async def stop(ctx: commands.Context):

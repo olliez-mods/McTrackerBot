@@ -97,6 +97,7 @@ def run_discord_bot():
         print("The provided token seems to not be formatted correctly. Make sure you are using the correct token\n")
         exit()
     Discord_Bot.start(SQL_DATABASE, BOT_TOKEN, OWNER_ID, PINNED_TIMEOUT)
+
 def run_mc_bot():
     MC_Logger.start(SQL_DATABASE, STATUS_TIMEOUT)
 
