@@ -51,7 +51,7 @@ PINNED_TIMEOUT: int = int(config['Settings']["pinned_message_timeout"])
 WAIT_FOR_CONNECTION: bool = (config['Settings']['wait_for_connection_on_boot'] == "1")
 TIME_BEFORE_FAIL:int = int(config['Settings']['time_before_fail'])
 
-
+# Function that return True if we have internet access
 def check_internet_connection():
     try:
         response = requests.get("http://www.google.com", timeout=5)
@@ -59,17 +59,21 @@ def check_internet_connection():
     except requests.ConnectionError:
         return False
 if(not check_internet_connection()):
+    # If we don't have internet but user wants us to quit. sigh, do it.
     if(not WAIT_FOR_CONNECTION):
         print("Internet connection not found :(. Goodbye\n")
         exit()
     print(f"Internet connection not found (Timeout={TIME_BEFORE_FAIL}):")
     print(" - Waiting...  ", end="", flush=True)
     t_start = time.time()
+    # As long as we don't have internet keep going around and around
     while(not check_internet_connection()):
+        # If it's -1 we want to loop inf. Otherwise check if we've hit our timeout
         if(TIME_BEFORE_FAIL > -1 and time.time() - t_start > TIME_BEFORE_FAIL):
             print("\n - Couldn't connect to the internet in time :(. Goodbye\n")
             exit()
         time.sleep(1)
+        # Using \r here return us to the beggining of the line, so we print over what we just printed
         print(f"\r - Waiting... {int(time.time() - t_start)}", flush=True, end="")
     print("\n - Internet connection established :D\n")
 
