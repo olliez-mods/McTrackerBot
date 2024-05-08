@@ -88,7 +88,7 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
 
     # If there are actualy zero logs at all, we will return an Embed that says NO DATA
     if(len(rows) == 0):
-        embed = discord.Embed(title=f"{mc_server_name}", color=0x00ff00)
+        embed = discord.Embed(title=f"{mc_server_name}", color=0x858585) # grey
         embed.add_field(name="", value="NO DATA")
         return embed
 
@@ -101,12 +101,16 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
     player_times_online: dict[str, str] = {}
 
     # Is the server online or offline
-    if(is_online): status_str = "Online"
-    else: status_str = "Offline"
+    if(is_online): 
+        status_str = "Online"
+        s_color = 0x00ff00
+    else: 
+        status_str = "Offline"
+        s_color = 0xFF1616
 
     # In the case where a mc server won't return players names (mc.hypixel.net as an example)
     if(player_list == ['']):
-        embed = discord.Embed(title=f"{mc_server_name}: " + status_str, color=0x00ff00)
+        embed = discord.Embed(title=f"{mc_server_name}: " + status_str, color=s_color)
         embed.add_field(name="", value=("Player count: " + str('{:,}'.format(player_count))))
         return embed
 
@@ -140,7 +144,7 @@ def get_embed(mc_server_uuid: str, mc_server_name: str = "MC Server") -> discord
     for player in players_left:
         player_times_online[player] = 60*60*16
 
-    embed = discord.Embed(title=f"{mc_server_name}: " + status_str, color=0x00ff00)
+    embed = discord.Embed(title=f"{mc_server_name}: " + status_str, color=s_color)
 
     if(is_online):
         if(player_count <= 0):
