@@ -108,5 +108,5 @@ minecraft_bot_thread.daemon = True
 if(USE_BOT): discord_bot_thread.start()
 minecraft_bot_thread.start()
 
-while(True):
+while(discord_bot_thread.is_alive() and minecraft_bot_thread.is_alive()):
     time.sleep(2)
