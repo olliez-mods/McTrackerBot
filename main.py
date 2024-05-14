@@ -8,6 +8,8 @@ from SQL_functions import *
 import minecraft_player_logger as MC_Logger
 import discord_bot as Discord_Bot
 
+import socket
+
 # If the config.ini file doesn't exist yet, we will make a default version of it and then quit
 if(not os.path.exists('config.ini')):
     print("Default config.ini file created with default settings.\nPlease adjust these for the program to function correctly")

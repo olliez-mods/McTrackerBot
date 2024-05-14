@@ -18,7 +18,9 @@ def create_disc_servers_table(cursor: sqlite3.Cursor):
                    channel_id INT,
                    pinned_id INT,
                    mc_server_disp_name VARCHAR(50),
-                   mc_server_uuid VARCHAR(32)
+                   mc_server_uuid VARCHAR(32),
+                   chat_enabled BOOL DEFAULT 0,
+                   chat_channel_id INT
                    );''')
 
 def create_mc_servers_table(cursor: sqlite3.Cursor):
@@ -36,4 +38,9 @@ def create_logs_table(cursor: sqlite3.Cursor, uuid: str):
                    online BOOL,
                    player_count INT,
                    players TEXT
+                   );''')
+    
+def create_chat_servers_table(cursor: sqlite3.Cursor):
+    cursor.execute(f'''CREATE TABLE chat_servers (
+                   
                    );''')

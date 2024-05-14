@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from SQL_functions import *
 import asyncio
 import random
+from chat_manager import *
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
@@ -221,12 +222,58 @@ async def update_pinned_messages():
         except discord.HTTPException:
             pass
 
+@tasks.loop(seconds=5)
+async def update_chat():
+    global SQL_connection, SQL_cursor
+    SQL_cursor.execute(f"SELECT * FROM disc_servers")
+
+    disc_servers = SQL_cursor.fetchall()
+
+    # loop over every discord server
+    for disc in disc_servers:
+        try:
+            guild_id:int = disc[0]
+            guild = bot.get_guild(guild_id)
+            if(guild == None):
+                print("Could not find the guild")
+                continue
+            chat_enabled: bool = disc[7]
+            if(not chat_enabled):
+                continue
+
+            chat_channel_id: int = disc[8]
+            chat_channel = guild.get_channel(chat_channel_id)
+            if(chat_channel == None):
+                print("Couldn't find channel for chat")
+                continue
+
+            mc_server_uuid: str = disc[6]
+
+            SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{mc_server_uuid}" LIMIT 1')
+            mc_server = SQL_cursor.fetchone()   
+            chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
+            new_chats = chat_manager.get_new_chats()
+            embeds = []
+            for chat in new_chats:
+                embed = discord.Embed(color=0x00ff00)
+                embed.set_thumbnail(url=chat_manager.get_head_url(chat[0]))
+                embed.add_field(name="\u200b", value=f"**{chat[0]}**\n{chat[1]}", inline=False)
+                embeds.append(embed)
+
+            await chat_channel.send(embeds=embeds)
+        # if the guild or channel has been deleted then these may throw
+        except discord.NotFound:
+            pass
+        except discord.HTTPException:
+            pass
+
 
 
 @bot.event
 async def on_ready():
     print("Discord Bot connected to Discord!")
     update_pinned_messages.start()
+    update_chat.start()
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -310,6 +357,17 @@ async def name(ctx: commands.Context, name:str):
 async def on_message(message: discord.Message):
 
     await bot.process_commands(message)
+
+    SQL_cursor.execute(f"SELECT * FROM disc_servers WHERE server_id = {message.guild.id} LIMIT 1")
+    discord_server = SQL_cursor.fetchone()
+
+    if(discord_server != None and discord_server[7] and message.author.id != bot.user.id):
+        if(discord_server[8] == message.channel.id):
+            SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{discord_server[6]}" LIMIT 1')
+            mc_server = SQL_cursor.fetchone()
+            print("We want to send a message")
+            chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
+            chat_manager.send_chat(message.author.nick, message.content)
 
     # Check if the message is a system message indicating a message has been pinned
     if message.type == discord.MessageType.pins_add:
