@@ -358,9 +358,11 @@ async def on_message(message: discord.Message):
 
     await bot.process_commands(message)
 
+    # Get the SQL row for the dsicrdo server associated witht he message
     SQL_cursor.execute(f"SELECT * FROM disc_servers WHERE server_id = {message.guild.id} LIMIT 1")
     discord_server = SQL_cursor.fetchone()
 
+    # Make sure there is a discord server registerd, that chat is enabled, and the the message wasn't sent by this bot
     if(discord_server != None and discord_server[7] and message.author.id != bot.user.id):
         if(discord_server[8] == message.channel.id):
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{discord_server[6]}" LIMIT 1')
