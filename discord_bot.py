@@ -364,12 +364,16 @@ async def on_message(message: discord.Message):
 
     # Make sure there is a discord server registerd, that chat is enabled, and the the message wasn't sent by this bot
     if(discord_server != None and discord_server[7] and message.author.id != bot.user.id):
+        # Check if the channel the message was sent in is the registered chat channel
         if(discord_server[8] == message.channel.id):
+            # Get the minecraft server
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{discord_server[6]}" LIMIT 1')
             mc_server = SQL_cursor.fetchone()
-            print("We want to send a message")
             chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
-            chat_manager.send_chat(message.author.nick, message.content)
+            p_name = message.author.nick
+            print(p_name)
+            if(p_name == "None"): p_name = message.author.name
+            chat_manager.send_chat(p_name, message.content)
 
     # Check if the message is a system message indicating a message has been pinned
     if message.type == discord.MessageType.pins_add:
