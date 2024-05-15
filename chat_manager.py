@@ -10,6 +10,7 @@ def read_next_kv(p:list[str]):
     return k, v
 
 def verify_packet(p:str) -> Optional[list[str]]:
+    if(p == None): return None
     lis = p.split("<#?=~>")
     length = len(lis)
     if(length == 0 or length == 0 or length%2 != 0):
@@ -30,15 +31,26 @@ class Chat:
         self.ip = ip
         self.port = port
 
-    def recv_data(self) -> str:
-        m, a = self.sock.recvfrom(2048)
-        return m.decode()
+    def recv_data(self) -> Optional[str]:
+        try:
+            m, a = self.sock.recvfrom(2048)
+            return m.decode()
+        except:
+            return None
 
     def get_head_url(self, name:str) -> str:
         return f'https://minotar.net/helm/{name}/48'
 
+    def check_server_connection(self) -> bool:
+        print(f"Trying to ping {self.ip}, {self.port}")
+        self.sock.sendto("ping<#?=~>None".encode(), (self.ip, self.port))
+        m = self.recv_data()
+        if(m == "pong"):
+            return True
+        return False
+
     def check_key(self) -> bool:
-        self.sock.sendto("key<#?=~>{self.key}".encode(), (self.ip, self.port))
+        self.sock.sendto(f"key<#?=~>{self.key}".encode(), (self.ip, self.port))
         m = self.recv_data()
         if(m == "LOGGED IN"):
             return True

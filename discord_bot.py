@@ -19,6 +19,23 @@ SQL_cursor: sqlite3.Cursor = None
 def get_uuid() -> str:
     return str(uuid.uuid4()).replace("-", "")
 
+def get_chat_manager(guild_id: int) -> Chat:
+    SQL_cursor.execute(f"SELECT * FROM disc_servers WHERE server_id = {guild_id} LIMIT 1")
+    disc_server = SQL_cursor.fetchone()
+
+    if(not disc_server): return None
+
+    # Get the mc_server info using the uuid
+    SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{disc_server[6]}" LIMIT 1')
+    mc_server = SQL_cursor.fetchone()   
+
+    if(not mc_server): return None
+    if(not mc_server[0]): return None
+    if(not disc_server[9]): return None
+
+    return Chat(mc_server[0], 25564, disc_server[9])
+
+
 def start_tracking_mc_server(uuid: str, ip: str, port: int):
     global SQL_connection, SQL_cursor
     SQL_cursor.execute("INSERT INTO mc_servers (server_ip, server_port, server_uuid) VALUES (?, ?, ?)", 
@@ -257,8 +274,8 @@ async def update_chat():
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{mc_server_uuid}" LIMIT 1')
             mc_server = SQL_cursor.fetchone()   
 
-            # Create the Chat class and request new chats
-            chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
+            chat_manager = get_chat_manager(guild_id)
+            if(chat_manager == None): continue
             new_chats = chat_manager.get_new_chats()
 
             # Loop over each new message and make an embed for it
@@ -288,6 +305,8 @@ async def on_ready():
 @bot.event
 async def on_command_error(ctx, error):
     if(isinstance(error, commands.UserInputError)):
+        return
+    if(isinstance(error, commands.CommandNotFound)):
         return
     raise error
 
@@ -349,16 +368,41 @@ async def chat(ctx: commands.Context, sub_command: str):
     global SQL_connection, SQL_cursor
 
     if(sub_command == "enable"):
-        SQL_cursor.execute("UPDATE disc_servers SET chat_enabled = ?, chat_channel_id = ? WHERE server_id = ?", (1, ctx.channel.id, ctx.guild.id))
+        SQL_cursor.execute(f'UPDATE disc_servers SET chat_enabled = 1, chat_channel_id = "{ctx.channel.id}" WHERE server_id = "{ctx.guild.id}"')
         SQL_connection.commit()
         await ctx.reply("Enabled chat featurs in this channel.\nMake sure you have setup the Server Wrapper (https://github.com/olliez-mods/McServerWrapper),\nand you have a valid key.")
         return
     if(sub_command == "disable"):
-        SQL_cursor.execute("UPDATE disc_servers SET chat_enabled = ? WHERE server_id = ?", (0, ctx.guild.id))
-        SQL_connection.commit("Disabled chat featurs in this channel.")
-        await ctx.reply()
+        SQL_cursor.execute(f'UPDATE disc_servers SET chat_enabled = 0 WHERE server_id = "{ctx.guild.id}"')
+        SQL_connection.commit()
+        await ctx.reply("Disabled chat featurs in server.")
         return
     if(sub_command == "verify"):
+        SQL_cursor.execute(f'SELECT chat_enabled, chat_server_key FROM disc_servers WHERE server_id = "{ctx.guild.id}" LIMIT 1')
+        disc_server = SQL_cursor.fetchone()
+        if(not disc_server):
+            await ctx.reply("This discord server is not registerd, make sure you use the \"!set\" command to setup your minecraft server.")
+        elif(not disc_server[0]):
+            await ctx.reply("Chat featurs are not enabled, use \"!chat enable\" to enable them in this channel.")
+        elif(not disc_server[1]):
+            await ctx.reply("No KEY found, make sure you've setup the MC Server Wrapper (https://github.com/olliez-mods/McServerWrapper).\nThen use \"!chat <key>\" to activate.")
+        elif(len(disc_server[1]) != 32 or not disc_server[1].isalnum()):
+            await ctx.reply("Set KEY is not valid, it must be of length 32 and have only numbers and letters.")
+            return
+        
+        chat_manager: Chat = get_chat_manager(ctx.guild.id)
+        if(not chat_manager):
+            await ctx.reply("Please use \"!set\" command to setup your minecraft server before trying to setup chat features.")
+            return
+        server_up = chat_manager.check_server_connection()
+        if(not server_up):
+            await ctx.reply("Could not establish a connection to the MC Server wrapper on port 25564, make sure the wrapper is running and you have port forwarded the port 25564.")
+            return
+        key_valid = chat_manager.check_key()
+        if(not key_valid):
+            await ctx.reply("Connected to the MC Server Wrapper, but the key is invalid, make sure are using the same key for both.")
+            return
+        await ctx.reply("Connected, and key validation is successfull, you should be ready to go!")
         return
     
     if(len(sub_command) != 32):
@@ -411,8 +455,7 @@ async def on_message(message: discord.Message):
             mc_server = SQL_cursor.fetchone()
             chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
             p_name = message.author.nick
-            print(p_name)
-            if(p_name == "None"): p_name = message.author.name
+            if(p_name == None): p_name = message.author.name
             chat_manager.send_chat(p_name, message.content)
 
     # Check if the message is a system message indicating a message has been pinned
