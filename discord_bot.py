@@ -232,15 +232,19 @@ async def update_chat():
     # loop over every discord server
     for disc in disc_servers:
         try:
+            # If chat isn't enabled, we can skip this
+            chat_enabled: bool = disc[7]
+            if(not chat_enabled):
+                continue
+
+            # Attempt to access the guild
             guild_id:int = disc[0]
             guild = bot.get_guild(guild_id)
             if(guild == None):
                 print("Could not find the guild")
                 continue
-            chat_enabled: bool = disc[7]
-            if(not chat_enabled):
-                continue
 
+            # Attempt to access the assigned chat channel
             chat_channel_id: int = disc[8]
             chat_channel = guild.get_channel(chat_channel_id)
             if(chat_channel == None):
@@ -249,18 +253,24 @@ async def update_chat():
 
             mc_server_uuid: str = disc[6]
 
+            # Get the mc_server info using the uuid
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{mc_server_uuid}" LIMIT 1')
             mc_server = SQL_cursor.fetchone()   
+
+            # Create the Chat class and request new chats
             chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
             new_chats = chat_manager.get_new_chats()
+
+            # Loop over each new message and make an embed for it
             embeds = []
             for chat in new_chats:
-                embed = discord.Embed(color=0x00ff00)
+                embed = discord.Embed(color=0x000000)
                 embed.set_thumbnail(url=chat_manager.get_head_url(chat[0]))
                 embed.add_field(name="\u200b", value=f"**{chat[0]}**\n{chat[1]}", inline=False)
                 embeds.append(embed)
 
             await chat_channel.send(embeds=embeds)
+
         # if the guild or channel has been deleted then these may throw
         except discord.NotFound:
             pass
@@ -309,7 +319,11 @@ async def help(ctx: commands.Context):
     - !help   Brings up this page.\n
     - !set <ip> <port>   Starts tracking the given minecraft server, also creates the pinned message.\n
     - !name \"<name>\"   Sets the display name of the Minecraft server, use quotes (\") around the name for spaces.\n
-    - !stop   Stops tracking the minecraft server."""
+    - !stop   Stops tracking the minecraft server.\n
+    - !chat enable   Enables the chat integration feature for this channel.\n
+    - !chat disable   Disables the chat feature for the server.\n
+    - !chat verify   Tries to contact the Server Wrapper and verify that connection is successfull and the key is valid.\n
+    - !chat <key>   Allows for verification with the Minecraft Server wrapper (https://github.com/olliez-mods/McServerWrapper)"""
     await ctx.reply(string)
 
 
@@ -330,6 +344,32 @@ async def stop(ctx: commands.Context):
 
     await ctx.reply("This feature is coming soon")
 
+@bot.command()
+async def chat(ctx: commands.Context, sub_command: str):
+    global SQL_connection, SQL_cursor
+
+    if(sub_command == "enable"):
+        SQL_cursor.execute("UPDATE disc_servers SET chat_enabled = ?, chat_channel_id = ? WHERE server_id = ?", (1, ctx.channel.id, ctx.guild.id))
+        SQL_connection.commit()
+        await ctx.reply("Enabled chat featurs in this channel.\nMake sure you have setup the Server Wrapper (https://github.com/olliez-mods/McServerWrapper),\nand you have a valid key.")
+        return
+    if(sub_command == "disable"):
+        SQL_cursor.execute("UPDATE disc_servers SET chat_enabled = ? WHERE server_id = ?", (0, ctx.guild.id))
+        SQL_connection.commit("Disabled chat featurs in this channel.")
+        await ctx.reply()
+        return
+    if(sub_command == "verify"):
+        return
+    
+    if(len(sub_command) != 32):
+        await ctx.message.reply("Wrong length, key must be of length 32.")
+        return
+    if(not sub_command.isalnum()):
+        await ctx.message.reply("Wrong format, key should only have letters and numbers.")
+        return
+    
+    SQL_cursor.execute("UPDATE disc_servers SET chat_server_key = ? WHERE server_id = ?", (sub_command, ctx.guild.id))
+    SQL_connection.commit()
 
 @bot.command()
 async def name(ctx: commands.Context, name:str):

@@ -35,7 +35,7 @@ class Chat:
         return m.decode()
 
     def get_head_url(self, name:str) -> str:
-        return f'https://minotar.net/avatar/{name}/48'
+        return f'https://minotar.net/helm/{name}/48'
 
     def check_key(self) -> bool:
         self.sock.sendto("key<#?=~>{self.key}".encode(), (self.ip, self.port))

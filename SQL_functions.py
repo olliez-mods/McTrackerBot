@@ -20,7 +20,8 @@ def create_disc_servers_table(cursor: sqlite3.Cursor):
                    mc_server_disp_name VARCHAR(50),
                    mc_server_uuid VARCHAR(32),
                    chat_enabled BOOL DEFAULT 0,
-                   chat_channel_id INT
+                   chat_channel_id INT,
+                   chat_server_key VARCHAR(32)
                    );''')
 
 def create_mc_servers_table(cursor: sqlite3.Cursor):
