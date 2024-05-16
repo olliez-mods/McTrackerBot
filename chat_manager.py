@@ -42,7 +42,6 @@ class Chat:
         return f'https://minotar.net/helm/{name}/48'
 
     def check_server_connection(self) -> bool:
-        print(f"Trying to ping {self.ip}, {self.port}")
         self.sock.sendto("ping<#?=~>None".encode(), (self.ip, self.port))
         m = self.recv_data()
         if(m == "pong"):
@@ -52,7 +51,6 @@ class Chat:
     def check_key(self) -> bool:
         self.sock.sendto(f"key<#?=~>{self.key}".encode(), (self.ip, self.port))
         m = self.recv_data()
-        print(m)
         if(m == "LOGGED IN"):
             return True
         return False
