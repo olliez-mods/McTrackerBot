@@ -415,6 +415,9 @@ async def chat(ctx: commands.Context, sub_command: str):
     SQL_cursor.execute("UPDATE disc_servers SET chat_server_key = ? WHERE server_id = ?", (sub_command, ctx.guild.id))
     SQL_connection.commit()
 
+    await ctx.reply("Validation key has been updated.\nRun \"!chat verify\" to verify it is correct.")
+    await ctx.message.delete()
+
 @bot.command()
 async def name(ctx: commands.Context, name:str):
     global SQL_connection, SQL_cursor
@@ -453,7 +456,8 @@ async def on_message(message: discord.Message):
             # Get the minecraft server
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{discord_server[6]}" LIMIT 1')
             mc_server = SQL_cursor.fetchone()
-            chat_manager = Chat(mc_server[0], 25564, "3717817634be42aca1bd9d90d2565ca1")
+            chat_manager = get_chat_manager(message.guild.id)
+            if(chat_manager != None): return
             p_name = message.author.nick
             if(p_name == None): p_name = message.author.name
             chat_manager.send_chat(p_name, message.content)

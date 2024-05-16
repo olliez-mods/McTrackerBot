@@ -52,6 +52,7 @@ class Chat:
     def check_key(self) -> bool:
         self.sock.sendto(f"key<#?=~>{self.key}".encode(), (self.ip, self.port))
         m = self.recv_data()
+        print(m)
         if(m == "LOGGED IN"):
             return True
         return False
