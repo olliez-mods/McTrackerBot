@@ -382,11 +382,14 @@ async def chat(ctx: commands.Context, sub_command: str):
         disc_server = SQL_cursor.fetchone()
         if(not disc_server):
             await ctx.reply("This discord server is not registerd, make sure you use the \"!set\" command to setup your minecraft server.")
-        elif(not disc_server[0]):
+            return
+        if(not disc_server[0]):
             await ctx.reply("Chat featurs are not enabled, use \"!chat enable\" to enable them in this channel.")
-        elif(not disc_server[1]):
+            return
+        if(not disc_server[1]):
             await ctx.reply("No KEY found, make sure you've setup the MC Server Wrapper (https://github.com/olliez-mods/McServerWrapper).\nThen use \"!chat <key>\" to activate.")
-        elif(len(disc_server[1]) != 32 or not disc_server[1].isalnum()):
+            return
+        if(len(disc_server[1]) != 32 or not disc_server[1].isalnum()):
             await ctx.reply("Set KEY is not valid, it must be of length 32 and have only numbers and letters.")
             return
         
@@ -457,7 +460,7 @@ async def on_message(message: discord.Message):
             SQL_cursor.execute(f'SELECT * FROM mc_servers WHERE server_uuid = "{discord_server[6]}" LIMIT 1')
             mc_server = SQL_cursor.fetchone()
             chat_manager = get_chat_manager(message.guild.id)
-            if(chat_manager != None): return
+            if(chat_manager == None): return
             p_name = message.author.nick
             if(p_name == None): p_name = message.author.name
             chat_manager.send_chat(p_name, message.content)
