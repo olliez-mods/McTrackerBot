@@ -367,6 +367,13 @@ async def stop(ctx: commands.Context):
 async def chat(ctx: commands.Context, sub_command: str):
     global SQL_connection, SQL_cursor
 
+    owner_id = ctx.guild.owner_id
+
+    # If message isn't sent by the auther, react to the message with an "X" and then exit this function
+    if(ctx.author.id != owner_id and ctx.author.id != BOT_OWNER_ID):
+        await ctx.message.add_reaction('❌')
+        return
+
     if(sub_command == "enable"):
         SQL_cursor.execute(f'UPDATE disc_servers SET chat_enabled = 1, chat_channel_id = "{ctx.channel.id}" WHERE server_id = "{ctx.guild.id}"')
         SQL_connection.commit()
