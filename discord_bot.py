@@ -319,9 +319,11 @@ async def set(ctx: commands.Context, ip: str, port:int = 25565):
         await ctx.message.add_reaction('❌')
         return
 
-    await ctx.reply("Proccessing...\nPlease wait for a pinned message to be generated\n.")
+    m: discord.Message = await ctx.reply("Proccessing...\nPlease wait for a pinned message to be generated\n.")
 
     update_disc_server(ctx, ip, port)
+
+    await m.delete(delay=5)
     print(f"Now tracking {ip}:{port}")
 
 @bot.command()
